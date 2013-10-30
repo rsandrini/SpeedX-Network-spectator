@@ -76,6 +76,11 @@ void Game::setup()
 	srand(time(0));
 	generateMap();
 
+	float posicoes[3][3] = { {1.123f, 2.345f, 0.654f},
+	                         {2.021f, 1.111f, 2.789f},
+	                         {0.999f, 1.550f, 1.556f} };
+
+
 	RedeTcp* tcp = new RedeTcp();
 
 	printf("criando um servidor e aguardando...\n");
@@ -83,11 +88,20 @@ void Game::setup()
 	char sendBuff[255];
 
 	printf("encontrou um cliente, enviando uma mensagem\n");
-	for(int a = 0; a < 500; a++) {
-		printf(sendBuff,sizeof(sendBuff),"oi, estou te enviando uma mensagem numero %d!",a+1);
-		printf("mensagem enviada: %s\n",sendBuff);
-		tcp->sendMessage(sendBuff);
+	short int aux;
+	int size = 0;
+
+	for(unsigned short int a = 0; a < 3; a++) {
+		for(unsigned short int b = 0; b < 3; b++) {
+			aux = (short int)(posicoes[a][b] * 1000.0f);
+			printf("aux[%d][%d]: %d\n",a,b,aux);
+
+			memcpy(sendBuff+size,&aux,sizeof(short int));
+			size += sizeof(short int);
+		}
 	}
+
+	tcp->sendMessage(sendBuff,size);
 
 	printf("enviou, desconectando\n");
 	tcp->disconnect();

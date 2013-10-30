@@ -90,7 +90,6 @@ bool RedeTcp::connectServer(char* ip, short porta) {
 
 	Socket = socket(AF_INET, SOCK_STREAM, 0);
 	if(Socket == -1) {
-		printf("1\n");
 		return false;
 	}
 
@@ -98,10 +97,8 @@ bool RedeTcp::connectServer(char* ip, short porta) {
 	serverAddress.sin_port   = htons(porta);
 
 #ifdef _WIN32
-	u_long numIp = inet_addr(ip);
-	serverAddress.sin_addr.s_addr = ntohl(numIp);
+	serverAddress.sin_addr.s_addr = inet_addr(ip);
 	if(serverAddress.sin_addr.s_addr == INADDR_NONE) {
-		printf("2\n");
 		return false;
 	}
 #else
@@ -112,7 +109,6 @@ bool RedeTcp::connectServer(char* ip, short porta) {
 #endif
 
 	if(connect(Socket,(struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
-		printf("3\n");
 		return false;
 	}
 
@@ -155,14 +151,12 @@ void RedeTcp::update() {
 }
 
 bool RedeTcp::receiveMessage(void* messageContent, int size) {
-	//printf("Out: %d In %d\n",Out,In);
 	char aux[bReceiveSize+1];
 
 	if(Out == In) /*buffer vazio*/
 		return false;
 
 	int mSize = ReceiveBuffer[Out]; /*tamanho da mensagem recebida no buffer*/
-	//printf("mSize: %d\n",mSize);
 
 	if(size <= 0 || mSize > size) /*garantia que cabe o buffer cabe em messageContent*/
 		return false;

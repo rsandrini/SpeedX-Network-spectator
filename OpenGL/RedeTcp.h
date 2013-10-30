@@ -3,13 +3,13 @@
 #define bReceiveSize 4096
 
 class RedeTcp {
+	private:
+		char SendBuffer[bSendSize];
+		char ReceiveBuffer[bReceiveSize];
 
-	char SendBuffer[bSendSize];
-	char ReceiveBuffer[bReceiveSize];
+		int Socket;
 
-	int Socket;
-
-	unsigned int In, Out;
+		unsigned int In, Out;
 
 	public:
 		RedeTcp();
