@@ -24,6 +24,9 @@ class Game : public GameSteps
 		void drawObstacle(int position, bool border) const;
 		void generateRing(int i) const;
 		void colision();
+		void sendNetwork();
+		void sendRotation();
+		void sendMap(tVector3 _buffer[30]);
 };
 
 #endif // ROTATINGTRIANGLE_H_INCLUDED

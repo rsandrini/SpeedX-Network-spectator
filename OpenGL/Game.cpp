@@ -22,9 +22,13 @@ float view = 0.0f;
 float posicao[] = {0.0, 0.0, 0.0, 1.0};
 // Speed sum
 float speed = 0.00005f;
-/* [0]- Game Run [1]- GameOver  [-1]-Pause */
+/* [0]-GameOver [1]-Game Run  [-1]-Pause [2]-Loading Network*/
 int gameState; 
 
+float timeToUpdateMap=0;
+
+// Network
+RedeTcp* tcp = new RedeTcp();
 
 void Game::setup()
 {
@@ -38,7 +42,7 @@ void Game::setup()
 	glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
 	//glEnable(GL_BLEND); 
 	
-	gameState = 1;
+	gameState = 2;
 	rotate = 0.0f;
 	
 	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);
@@ -76,38 +80,76 @@ void Game::setup()
 	srand(time(0));
 	generateMap();
 
-	float posicoes[3][3] = { {1.123f, 2.345f, 0.654f},
-	                         {2.021f, 1.111f, 2.789f},
-	                         {0.999f, 1.550f, 1.556f} };
-
-
-	RedeTcp* tcp = new RedeTcp();
-
-	printf("criando um servidor e aguardando...\n");
+	printf("Aguardando cliente conectar...\n");
 	tcp->createServer(8280);
-	char sendBuff[255];
+	sendMap(buffer); // Send buffer map
+	sendMap(color);  // Send buffer color
+	gameState = 1;
 
-	printf("encontrou um cliente, enviando uma mensagem\n");
-	short int aux;
-	int size = 0;
-
-	for(unsigned short int a = 0; a < 3; a++) {
-		for(unsigned short int b = 0; b < 3; b++) {
-			aux = (short int)(posicoes[a][b] * 1000.0f);
-			printf("aux[%d][%d]: %d\n",a,b,aux);
-
-			memcpy(sendBuff+size,&aux,sizeof(short int));
-			size += sizeof(short int);
-		}
-	}
-
-	tcp->sendMessage(sendBuff,size);
-
-	printf("enviou, desconectando\n");
-	tcp->disconnect();
-
-	delete(tcp);
 }
+
+void Game::sendRotation()
+{
+	char sendBuff[10];
+	float aux;
+	aux = rotate * 1000.0f;
+	memcpy(sendBuff,&aux,sizeof(float));
+	tcp->sendMessage(sendBuff,sizeof(float));
+}
+
+void Game::sendMap(tVector3 _buffer[30])
+{
+	
+	int ctrlLoop = 0;
+	while (ctrlLoop < 30){
+		printf("enviado parte %i", ctrlLoop);
+		char sendBuff[255];
+		float aux;
+		int size = 0;
+		// Send Map initial
+		for(unsigned short int b = ctrlLoop; b < (ctrlLoop+10); b++) {
+			// X
+			aux = _buffer[b].x * 1000.0f;
+			memcpy(sendBuff+size,&aux,sizeof(float));
+			size += sizeof(float);
+		
+			// Y
+			aux = _buffer[b].y * 1000.0f;
+			memcpy(sendBuff+size,&aux,sizeof(float));
+			size += sizeof(float);
+		
+			// Z
+			aux = _buffer[b].z * 1000.0f;
+			memcpy(sendBuff+size,&aux,sizeof(float));
+			size += sizeof(float);
+		
+		}
+		tcp->sendMessage(sendBuff,size);
+
+		char receiveBuff[10];
+		unsigned short int pos = 0;
+
+		printf("Aguardando resposta cliente...\n");
+		while(1) {
+			tcp->update();
+			if(tcp->receiveMessage(receiveBuff,sizeof(receiveBuff))) {
+				break;
+			}
+		}
+		ctrlLoop += 10;
+	}
+}
+
+void Game::sendNetwork()
+{
+	sendMap(buffer); // Send buffer map
+	sendMap(color);  // Send buffer color
+
+	sendRotation(); // Send a float rotation
+
+}
+
+
 
 void Game::processEvents(const SDL_Event& event)
 {
@@ -154,15 +196,25 @@ void Game::processLogics(float secs)
 
 		// Check collision
 		colision();
+
+		// Send info to client
+		sendNetwork();
+
 	}
 	
 	if (gameState == -1){
 	
-		printf("PAUSE\n");
+		printf("Restart\n");
 	}
 
 	if (gameState == 0){
 		printf("GameOver");
+		
+		printf("desconectando\n");
+		tcp->disconnect();
+
+		delete(tcp);
+		gameState = 3;
 	}
 	/*
 	printf("POS [%.2f %.2f %.2f] VIEW [%.2f %.2f %.2f] UP [%.2f %.2f %.2f] \n",

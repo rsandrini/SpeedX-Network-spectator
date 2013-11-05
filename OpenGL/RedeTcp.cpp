@@ -1,6 +1,6 @@
 #include "RedeTcp.h"
 #ifdef _WIN32
-	#include <WinSock2.h>
+#include <WinSock.h>
 #else
 	#include <sys/socket.h>
 	#include <netinet/in.h>
