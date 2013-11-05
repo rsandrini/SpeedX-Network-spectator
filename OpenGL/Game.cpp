@@ -102,7 +102,7 @@ void Game::sendMap(tVector3 _buffer[30])
 	
 	int ctrlLoop = 0;
 	while (ctrlLoop < 30){
-		printf("enviado parte %i", ctrlLoop);
+		//printf("enviado parte %i", ctrlLoop);
 		char sendBuff[255];
 		float aux;
 		int size = 0;
@@ -128,22 +128,26 @@ void Game::sendMap(tVector3 _buffer[30])
 
 		char receiveBuff[10];
 		unsigned short int pos = 0;
-
-		printf("Aguardando resposta cliente...\n");
+		ctrlLoop += 10;
+		printf("Aguardando confirmacao parte %i...\n", ctrlLoop);
 		while(1) {
 			tcp->update();
-			if(tcp->receiveMessage(receiveBuff,sizeof(receiveBuff))) {
+ 			if(tcp->receiveMessage(receiveBuff,sizeof(receiveBuff))) {
 				break;
 			}
 		}
-		ctrlLoop += 10;
+		
 	}
 }
 
 void Game::sendNetwork()
 {
-	sendMap(buffer); // Send buffer map
-	sendMap(color);  // Send buffer color
+	timeToUpdateMap++;
+	if (timeToUpdateMap > 10){
+		sendMap(buffer); // Send buffer map
+		sendMap(color);  // Send buffer color
+		timeToUpdateMap = 0;
+	}
 
 	sendRotation(); // Send a float rotation
 
